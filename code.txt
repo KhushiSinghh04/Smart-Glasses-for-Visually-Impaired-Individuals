@@ -1,0 +1,144 @@
+// Define ultrasonic sensor pins  
+#define FRONT_TRIG_PIN 2  
+#define FRONT_ECHO_PIN 3  
+#define LEFT_TRIG_PIN 4  
+#define LEFT_ECHO_PIN 5  
+#define RIGHT_TRIG_PIN 7  
+#define RIGHT_ECHO_PIN 8  
+
+// Define vibration motor pins  
+#define FRONT_MOTOR_PIN 9  
+#define LEFT_MOTOR_PIN 6   // Corrected from 8 to 6  
+#define RIGHT_MOTOR_PIN 10  
+
+// Define buzzer pin  
+#define BUZZER_PIN 12  
+
+// Define distance thresholds  
+#define DANGER_THRESHOLD 30  
+#define CRITICAL_THRESHOLD 15  
+
+// Variables for sensor readings  
+long durationFront, durationLeft, durationRight;  
+int distanceFront, distanceLeft, distanceRight;  
+
+void setup() {  
+  Serial.begin(9600);  
+
+  // Configure ultrasonic sensor pins  
+  pinMode(FRONT_TRIG_PIN, OUTPUT);  
+  pinMode(FRONT_ECHO_PIN, INPUT);  
+  pinMode(LEFT_TRIG_PIN, OUTPUT);  
+  pinMode(LEFT_ECHO_PIN, INPUT);  
+  pinMode(RIGHT_TRIG_PIN, OUTPUT);  
+  pinMode(RIGHT_ECHO_PIN, INPUT);  
+
+  // Configure output pins  
+  pinMode(FRONT_MOTOR_PIN, OUTPUT);  
+  pinMode(LEFT_MOTOR_PIN, OUTPUT);  
+  pinMode(RIGHT_MOTOR_PIN, OUTPUT);  
+  pinMode(BUZZER_PIN, OUTPUT);  
+
+  // Initialize all outputs to LOW  
+  digitalWrite(FRONT_MOTOR_PIN, LOW);  
+  digitalWrite(LEFT_MOTOR_PIN, LOW);  
+  digitalWrite(RIGHT_MOTOR_PIN, LOW);  
+  digitalWrite(BUZZER_PIN, LOW);  
+
+  // Startup sequence  
+  startupSequence();  
+}
+
+void loop() {  
+  measureDistance();  
+  printDistances();  
+  processFeedback();  
+  delay(100);  // Prevent overwhelming feedback  
+}  
+
+void startupSequence() {  
+  digitalWrite(BUZZER_PIN, HIGH);  
+  delay(200);  
+  digitalWrite(BUZZER_PIN, LOW);  
+
+  digitalWrite(LEFT_MOTOR_PIN, HIGH); delay(200); digitalWrite(LEFT_MOTOR_PIN, LOW);  
+  digitalWrite(FRONT_MOTOR_PIN, HIGH); delay(200); digitalWrite(FRONT_MOTOR_PIN, LOW);  
+  digitalWrite(RIGHT_MOTOR_PIN, HIGH); delay(200); digitalWrite(RIGHT_MOTOR_PIN, LOW);  
+
+  digitalWrite(BUZZER_PIN, HIGH);  
+  delay(100);  
+  digitalWrite(BUZZER_PIN, LOW);  
+
+  delay(500);  
+}  
+
+void measureDistance() {  
+  // Measure front distance  
+  digitalWrite(FRONT_TRIG_PIN, LOW); delayMicroseconds(2);  
+  digitalWrite(FRONT_TRIG_PIN, HIGH); delayMicroseconds(10);  
+  digitalWrite(FRONT_TRIG_PIN, LOW);  
+  durationFront = pulseIn(FRONT_ECHO_PIN, HIGH);  
+  distanceFront = durationFront * 0.034 / 2;  
+
+  delay(10);  
+
+  // Measure left distance  
+  digitalWrite(LEFT_TRIG_PIN, LOW); delayMicroseconds(2);  
+  digitalWrite(LEFT_TRIG_PIN, HIGH); delayMicroseconds(10);  
+  digitalWrite(LEFT_TRIG_PIN, LOW);  
+  durationLeft = pulseIn(LEFT_ECHO_PIN, HIGH);  
+  distanceLeft = durationLeft * 0.034 / 2;  
+
+  delay(10);  
+
+  // Measure right distance  
+  digitalWrite(RIGHT_TRIG_PIN, LOW); delayMicroseconds(2);  
+  digitalWrite(RIGHT_TRIG_PIN, HIGH); delayMicroseconds(10);  
+  digitalWrite(RIGHT_TRIG_PIN, LOW);  
+  durationRight = pulseIn(RIGHT_ECHO_PIN, HIGH);  
+  distanceRight = durationRight * 0.034 / 2;  
+}  
+
+void printDistances() {  
+  Serial.print("Front: "); Serial.print(distanceFront);  
+  Serial.print(" cm | Left: "); Serial.print(distanceLeft);  
+  Serial.print(" cm | Right: "); Serial.print(distanceRight);  
+  Serial.println(" cm");  
+}  
+
+void processFeedback() {  
+  // Front feedback  
+  if (distanceFront < CRITICAL_THRESHOLD) {  
+    digitalWrite(FRONT_MOTOR_PIN, HIGH);  
+    digitalWrite(BUZZER_PIN, HIGH);  
+  } else if (distanceFront < DANGER_THRESHOLD) {  
+    digitalWrite(FRONT_MOTOR_PIN, HIGH);  
+    delay(50);  
+    digitalWrite(FRONT_MOTOR_PIN, LOW);  
+  } else {  
+    digitalWrite(FRONT_MOTOR_PIN, LOW);  
+    digitalWrite(BUZZER_PIN, LOW);  
+  }  
+
+  // Left feedback  
+  if (distanceLeft < CRITICAL_THRESHOLD) {  
+    digitalWrite(LEFT_MOTOR_PIN, HIGH);  
+  } else if (distanceLeft < DANGER_THRESHOLD) {  
+    digitalWrite(LEFT_MOTOR_PIN, HIGH);  
+    delay(50);  
+    digitalWrite(LEFT_MOTOR_PIN, LOW);  
+  } else {  
+    digitalWrite(LEFT_MOTOR_PIN, LOW);  
+  }  
+
+  // Right feedback  
+  if (distanceRight < CRITICAL_THRESHOLD) {  
+    digitalWrite(RIGHT_MOTOR_PIN, HIGH);  
+  } else if (distanceRight < DANGER_THRESHOLD) {  
+    digitalWrite(RIGHT_MOTOR_PIN, HIGH);  
+    delay(50);  
+    digitalWrite(RIGHT_MOTOR_PIN, LOW);  
+  } else {  
+    digitalWrite(RIGHT_MOTOR_PIN, LOW);  
+  }  
+}
